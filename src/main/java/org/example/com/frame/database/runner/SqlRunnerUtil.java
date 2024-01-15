@@ -31,45 +31,35 @@ public class SqlRunnerUtil {
     }
 
     public static Object[] getDataListToArray(DataList dataList) throws Exception{
-        Object[] args = null;
-        if (dataList != null && !dataList.isEmpty()) {
-            args = new Object[dataList.size()];
-            for(int i = 0; i< dataList.size(); i++){
-                args[i] = dataList.get(i);
-            }
-        }
-        return args;
+        return (dataList != null && !dataList.isEmpty()) ? dataList.toArray() : null;
     }
 
-    public static RowMapper getSelectDataRowMapper() throws Exception{
-        RowMapper rowMapper = (rs, rownum) -> {
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            int columnCnt = rsMetaData.getColumnCount();
-            Data data = new Data();
+    public static RowMapper<Data> getSelectDataRowMapper() {
+        return (rs, rownum) -> {
             try {
-                for(int i=1; i<= columnCnt; i++){
+                ResultSetMetaData rsMetaData = rs.getMetaData();
+                int columnCnt = rsMetaData.getColumnCount();
+                Data data = new Data();
+
+                for (int i = 1; i <= columnCnt; i++) {
                     String columnName = rsMetaData.getColumnName(i);
                     int columnType = rsMetaData.getColumnType(i);
 
-                    if(Types.CLOB == columnType){
-                        data.add(columnName, clobToString(rs,i));
-                    } else if(Types.BLOB == columnType) {
+                    if (Types.CLOB == columnType) {
+                        data.add(columnName, clobToString(rs, i));
+                    } else if (Types.BLOB == columnType) {
                         data.add(columnName, blobToByteArray(rs, i));
                     } else {
-                        if (rs.getString(i) == null) {
-                            data.add(columnName, "");
-                        } else {
-                            data.add(columnName, rs.getString(i));
-                        }
+                        data.add(columnName, rs.getString(i) != null ? rs.getString(i) : "");
                     }
                 }
+
+                return data;
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new DataException();
             }
-            return data;
         };
-        return rowMapper;
     }
 
     public static RowMapper getSelectHashMapRowMapper() throws Exception{
